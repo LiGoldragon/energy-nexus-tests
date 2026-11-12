@@ -1,0 +1,11 @@
+Signal
+[ :crate:library:[ Provider Observation Pace RedemptionResult Failure Caller ] ] ; owned shared vocabulary
+[ Read.Provider                                           ; attempt or recall one provider observation
+  Subscribe                                               ; snapshot, then transitions
+  Redeem.Provider ]                                       ; explicit waiting-work redemption request
+[ Read.{ Observation Vector<Pace> }                        ; success/failure and separately aged data
+  Subscribed.Vector<Observation>                           ; snapshot precedes subsequent transitions
+  Changed.Observation                                     ; includes transitions into and out of Unknown
+  Redemption.RedemptionResult                             ; definite other result or uncertainty
+  Refused.[ NoReset RuleRefused.String Failure.Failure ] ]          ; typed inability to attempt
+[ Call.{ Caller Query } ]                                 ; current generator names the input Query, capability gap recorded

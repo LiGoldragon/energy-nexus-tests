@@ -1,0 +1,8 @@
+Memory
+[ :signal_energy_nexus:library:[ Provider AttemptId At ReadOutcome Reading Redemption ] ; current typed observations
+  :meta_signal_energy_nexus:library:[ PolicyConfiguration ConfigurationRevision ] ] ; policy stays in its owner's store
+[ LatestAttempt.{ Provider AttemptId At ReadOutcome } ; contains no embedded successful Reading
+  ReadingReference.String                                  ; fingerprint of the referenced encoded Reading
+  LatestSuccess.{ Provider ReadingReference }              ; selects the one stored Reading, does not copy it
+  LegacyArchive.{ FormatVersion.Integer ArchiveBytes.Vector<Integer> } ; exact former archive evidence, each byte validated 0 through 255
+  Memory.{ Vector<LatestAttempt> Vector<Reading> Vector<LatestSuccess> PolicyConfiguration ConfigurationRevision Vector<Redemption> Vector<LegacyArchive> } ] ; success history stored once, public Observation is a projection

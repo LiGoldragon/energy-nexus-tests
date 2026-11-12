@@ -1,0 +1,31 @@
+Library
+[ :crate:[ Translator ProviderDocument ResetReply AttemptReporter TextRequest ] ; data-bearing process owners, not wire vocabulary
+  :crate:telemetry:[ AttemptContext AttemptReporting AttemptReportable ] ; explicit emission reporting capability
+  :crate:emission_contract:[ ProviderRead ConsumeRequest ConsumeReply ] ; generated typed external-call boundary
+  :signal_energy_nexus:library:[ ReadingResult Failure Caller ] ; outcomes exclude raw provider content
+  :meta_signal_energy_nexus:[ Call Response ]               ; public meta root keeps pinned generated names
+  :meta_signal_energy_nexus:library:[ ConfigurationSnapshot ProgramChange TranslatorConfiguration ] ] ; typed owner snapshots
+[ SyntaxProblem.[ Malformed UnknownOperation BudgetExceeded ] ; bounded public text diagnostics
+  TextReply.[ Answer.String SyntaxRefused.{ SyntaxProblem Position.Integer } Failure.Failure ] ] ; raw input is never echoed
+[ ReadingDecodable.[ decode.[ ReadingResult ] ]            ; ProviderDocument owns provider/body/time
+  RedemptionDecodable.[ decode.[ ConsumeReply ] ]           ; ResetReply owns body and original submission identity/evidence
+  ProviderDemanding.[ demand.[ ProviderRead ] ]             ; data capability, not a concrete method parameter
+  RedemptionDemanding.[ submission.[ ConsumeRequest ] ]     ; only fields the provider call needs
+  ProviderCallable.[ read.{ [ ProviderDemanding ] [ ReadingResult ] } ] ; Translator owns program and credential references
+  RedemptionCallable.[ consume.{ [ RedemptionDemanding ] [ ConsumeReply ] } ] ; does not create a new idempotency identity
+  ConfigurationReadable.[ configuration.[ ConfigurationSnapshot ] ] ; independent snapshot parts
+  ProgramsChanging.[ change.[ ProgramChange ] ]            ; cannot carry daemon policy
+  ProgramsConfigurable.[ configure_programs!{ [ ProgramsChanging ] [ Result<TranslatorConfiguration Failure> ] } ] ; save before swap
+  MetaRequesting.[ call.[ Call ] ]                         ; forwarded kernel caller remains in the envelope
+  MetaAnswerable.[ answer_meta!{ [ MetaRequesting ] [ Response ] } ] ; public meta only
+  TextRequesting.[ text.[ String ] caller.[ Caller ] ]      ; caller is separate from freely written datom text
+  TextAnswerable.[ answer_text!{ [ TextRequesting ] [ TextReply ] } ] ] ; bounded local refusal, no panic
+[ ProviderDocument.[ ReadingDecodable ]                   ; translator-local provider document, no runtime archive requirement
+  ResetReply.[ RedemptionDecodable ]
+  ProviderRead.[ ProviderDemanding ]
+  ConsumeRequest.[ RedemptionDemanding ]
+  ProgramChange.[ ProgramsChanging ]
+  Call.[ MetaRequesting ]
+  TextRequest.[ TextRequesting ]
+  Translator.[ ProviderCallable RedemptionCallable ConfigurationReadable ProgramsConfigurable MetaAnswerable TextAnswerable ]
+  AttemptReporter.[ AttemptReportable ] ]                  ; the reporter owns its journal sink

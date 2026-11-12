@@ -1,0 +1,9 @@
+Signal
+[ :crate:library:[ PolicySet NexusConfiguration ]           ; daemon's policy-only surface
+  :signal_energy_nexus:library:[ Caller Failure ] ]         ; forwarded peer identity, typed refusal
+[ Configure.PolicySet                                     ; translator-owned programs cannot be submitted here
+  Configuration ]                                         ; one daemon policy snapshot
+[ Configured.PolicySet                                    ; after durable policy write
+  Configuration.NexusConfiguration                        ; effective daemon revision and values
+  Refused.Failure ]                                       ; unavailable is not an empty default
+[ Call.{ Caller Query } ]                                 ; internal meta envelope, separately fingerprinted

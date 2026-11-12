@@ -1,0 +1,3 @@
+Memory
+[ :meta_signal_energy_nexus:library:[ Programs ConfigurationRevision ] ] ; translator reference state only
+[ ProgramsMemory.{ ConfigurationRevision Programs } ]      ; persists references and owner revision atomically

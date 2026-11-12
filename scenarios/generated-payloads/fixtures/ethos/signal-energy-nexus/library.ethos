@@ -1,0 +1,60 @@
+Library
+[ :signal_flow:Address ]                                   ; Flow owns reminder addresses
+[ Provider.[ Claude Codex ]                                ; providers observed by Energy
+  Percent.Integer                                         ; validated whole percentage, 0 through 100
+  Instant.Integer                                         ; validated Unix seconds
+  At.Integer                                              ; observation or transition timestamp
+  Minutes.Integer                                         ; validated positive duration
+  Name.[ Session Week FableWeek Unknown ]                  ; Unknown never selects a named target
+  Allowance.[ Allowed Disallowed Unknown ]                 ; explicit provider allowance only
+  Usage.[ Percent Unknown ]                               ; bare named payload, unavailable is explicit
+  ResetTime.[ Instant Unknown ]                           ; absence is not epoch zero
+  WindowDuration.[ Minutes Unknown ]                      ; absence is not a zero-length window
+  Window.{ Name Usage ResetTime WindowDuration }           ; independent window evidence
+  MissingEvidence.[ NotProvided ScopeIdentityUnverified LegacyObservation ] ; bounded unknown reasons
+  Windows.[ Known.Vector<Window>                           ; complete reported collection
+            Partial.{ Vector<Window> MissingEvidence }     ; valid rows with incomplete coverage
+            MissingEvidence ]                             ; no usable collection
+  Expiry.[ Instant NoExpiry Unknown ]                      ; null expiry is explicitly non-expiring
+  Granted.[ Instant Unknown ]                              ; unknown only for legacy evidence
+  ResetId.String                                          ; opaque credit identity
+  ResetStatus.[ Available Redeeming Redeemed Unknown ]      ; recognized provider statuses
+  ResetKind.[ RateLimits Unknown ]                         ; unsupported kind cannot be selected
+  Reset.{ ResetId ResetStatus ResetKind Expiry Granted }   ; one selected metadata value
+  AvailableCount.Integer                                  ; validated nonnegative count
+  ResetDetails.[ Complete.Vector<Reset> Partial.Vector<Reset> Unknown ] ; fetched and complete differ
+  Credits.[ Known.{ AvailableCount ResetDetails } Unknown NotApplicable ] ; absence is not empty
+  Reading.{ Provider Allowance Windows Credits At } ; successful typed provider observation
+  Level.[ Plenty Fair Low Out Unknown ]                    ; Unknown is not configurable as a threshold
+  Threshold.{ Level Left.Integer }                        ; existing level policy
+  Reminder.{ Provider Level Address }                   ; one reminder destination and crossing
+  Target.[ Even SpendBy.Instant ]                          ; existing pace policy
+  Expected.Integer                                        ; target's expected used share
+  Used.Integer                                            ; actual used share
+  PerDay.Integer                                          ; nonnegative percentage points per day, may exceed 100
+  Standing.[ Over Under On ]                              ; actual compared with target
+  PaceUnavailable.[ UsageMissing ResetTimeMissing DurationMissing IdentityMissing CoverageMissing ] ; missing calculation prerequisite
+  Pace.[ Calculated.{ Provider Name Target Expected Used Standing PerDay } ; valid pace calculation
+         Unavailable.{ Provider Name PaceUnavailable } ]   ; unavailable pace still names the window
+  Failure.[ Configuration.[ ProgramUnconfigured StateUnavailable ] ; stage owns its allowed causes
+            Credential.[ Missing Unreadable Malformed ]    ; no credential contents
+            Process.[ Launch Exit.Option<Integer> ]        ; bounded launch/exit evidence
+            Transport.[ Connection Timeout EndOfStream ]  ; no raw transport error
+            Http.[ RateLimited.[ Instant Unknown ] Status.Integer ] ; retry deadline only if known
+            ResponseMalformed                              ; stage is decoding, determined by this cause
+            ContractMismatch.[ AllowanceField BucketField WindowField UsageField DurationField ResetTimeField CreditSummaryField CreditIdentityField CreditStatusField CreditKindField CreditExpiryField GrantedTimeField ConsumeOutcomeField ScopeIdentityField ] ; finite field names
+            Storage.[ Unavailable Invalid ] ]             ; stage is persistence, determined by this cause
+  AttemptId.String                                        ; invocation-unique plus local sequence
+  ReadingResult.[ Reading Failure ]                        ; emitted read result before Memory projection
+  ReadOutcome.[ Observed Failure ]                         ; failure stage is encoded in Failure itself
+  LastSuccessful.[ Reading Never ]                        ; the public projection's one retained reading
+  Observation.{ Provider AttemptId At ReadOutcome LastSuccessful Level } ; not stored as a second cache
+  RedemptionId.String                                     ; persisted idempotency identity
+  RedemptionOutcome.[ ResetApplied NothingToReset NoCredit AlreadyRedeemed ] ; recognized definite outcomes
+  Uncertain.{ Failure At }                        ; post-submission uncertainty and its observation time
+  RedemptionState.[ Prepared Submitted Uncertain RedemptionOutcome ] ; one durable state/result
+  Redemption.{ RedemptionId Reset At RedemptionState } ; selected metadata is held once
+  RedemptionResult.[ Redemption Failure ]                  ; projected from the durable record, no repeated outcome
+  Caller.{ ProcessId.Integer UserId.Integer } ]            ; peer caller carried through forwarding
+[]                                                        ; calculation and effect traits live with their owning operations
+[]                                                        ; shared vocabulary declares no runtime owner

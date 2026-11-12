@@ -1,0 +1,45 @@
+#!/usr/bin/env bash
+set -euo pipefail
+# Project the probe into a temporary sandbox; execute its unchanged Nix graph on the builder.
+# Usage: project ORDINARY_CONTRACT_CHECKOUT SANDBOX [ordinary|all|negative]
+source_checkout=$1
+sandbox=$2
+mode=${3:-all}
+scenario=$(cd "$(dirname "$0")" && pwd)
+base=7ca10ebccdc674bbd96489ceff3e2a43d32d6ec3
+mkdir -p "$sandbox"
+if test -n "$(ls -A "$sandbox")"; then printf 'Sandbox must be empty.\n' >&2; exit 2; fi
+git -C "$source_checkout" archive "$base" | tar -x -C "$sandbox"
+cp "$scenario/fixtures/lib.rs" "$sandbox/src/lib.rs"
+cp "$scenario/fixtures/generated/signal-energy-nexus/library.rs" "$sandbox/src/library.rs"
+cp "$scenario/fixtures/generated/signal-energy-nexus/signal.rs" "$sandbox/src/signal.rs"
+cp "$scenario/fixtures/ethos/signal-energy-nexus/"*.ethos "$sandbox/"
+mkdir -p "$sandbox/tests"
+case "$mode" in
+  ordinary) cp "$scenario/ordinary.rs" "$sandbox/tests/payload.rs" ;;
+  negative)
+    cp "$scenario/ordinary.rs" "$sandbox/tests/payload.rs"
+    cp "$scenario/fixtures/bare-signal.rs" "$sandbox/src/signal.rs"
+    cp "$scenario/fixtures/bare-signal.ethos" "$sandbox/signal.ethos"
+    ;;
+  all)
+    cp "$scenario/all_payloads.rs" "$sandbox/tests/all_payloads.rs"
+    mkdir -p "$sandbox/tests/generated"
+    while read -r module path; do
+      cp "$scenario/fixtures/generated/$path" "$sandbox/tests/generated/$module.rs"
+    done <<'MODULES'
+library meta-signal-energy-nexus/library.rs
+public meta-signal-energy-nexus/signal.rs
+internal meta-signal-energy-nexus/nexus.rs
+memory_contract energy-nexus/memory-stage-one.rs
+programs_contract energy-nexus/programs-stage-one.rs
+telemetry energy-nexus/telemetry.rs
+emission_contract energy-nexus/emission-stage-one.rs
+selection energy-nexus/selection.rs
+translator_runtime energy-nexus/translator-runtime.rs
+daemon_runtime energy-nexus/daemon-runtime.rs
+MODULES
+    ;;
+  *) printf 'Unknown probe mode: %s\n' "$mode" >&2; exit 2 ;;
+esac
+printf "Projected %s probe. On the builder: nix build 'path:%s#checks.x86_64-linux.test' --no-link -L\n" "$mode" "$sandbox"

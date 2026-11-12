@@ -1,0 +1,34 @@
+Library
+[ :crate:[ Nexus ReadCompletion ReadRequest RedemptionRequest ] ; process owners and typed requests
+  :crate:schedule:Track                                    ; existing provider schedule data, not a new scheduler
+  :crate:memory_contract:Memory                            ; generated Memory, held once by Nexus
+  :crate:telemetry:[ AttemptContext Trigger ReportingFailure ] ; existing-demand accounting only
+  :crate:emission_contract:[ Emission EmissionOutcome ]      ; generated binary emission contract
+  :signal_energy_nexus:library:[ Provider Observation RedemptionResult Failure ] ; public domain outputs
+  :meta_signal_energy_nexus:internal:[ Call Response ]       ; distinct internal-policy root
+  :meta_signal_energy_nexus:library:[ PolicySet NexusConfiguration ] ] ; no translator-owned change is accepted
+[ DemandReceipt.[ Counted ReportingFailure.ReportingFailure ]               ; local accounting outcome
+  CommitReceipt.[ Saved Failure.Failure ] ]             ; reporting fault is not another refresh demand
+[ ReadDemanding.[ context.[ AttemptContext ] provider.[ Provider ] ] ; request data determines the provider
+  ReadAttemptable.[ attempt_read!{ [ ReadDemanding ] [ Observation ] } ] ; Nexus owns Memory and emission endpoint
+  RedemptionDemanding.[ provider.[ Provider ] ]             ; explicit caller request supplies waiting-work premise
+  RedemptionAttemptable.[ attempt_redemption!{ [ RedemptionDemanding ] [ RedemptionResult ] } ] ; durable lifecycle precedes call
+  EmissionRequesting.[ emission.[ Emission ] ]              ; typed request, provider text absent
+  EmissionCallable.[ emit.{ [ EmissionRequesting ] [ Result<EmissionOutcome Failure> ] } ] ; Nexus owns emission socket place
+  MemoryChanging.[ candidate.[ Memory ] ]                  ; no second configuration owner
+  MemoryCommittable.[ commit!{ [ MemoryChanging ] [ CommitReceipt ] } ] ; durable save before publication
+  ObservationChanging.[ completion.[ ReadCompletion ] ]    ; fresh result and its attempt metadata
+  ObservationCommittable.[ record!{ [ ObservationChanging ] [ Observation ] } ] ; commit one success and project the response
+  PolicyRequesting.[ call.[ Call ] ]                       ; only the internal typed surface
+  PolicyAnswerable.[ answer_policy!{ [ PolicyRequesting ] [ Response ] } ] ; preserves forwarded Caller
+  DemandDescribing.[ trigger.[ Trigger ] ]                  ; one existing demand event
+  DemandAccountable.[ account!{ [ DemandDescribing ] [ DemandReceipt ] } ] ] ; counter update cannot schedule a call
+[ ReadRequest.[ ReadDemanding ]                           ; data-bearing operation requests
+  RedemptionRequest.[ RedemptionDemanding ]
+  Emission.[ EmissionRequesting ]
+  Memory.[ MemoryChanging ]
+  ReadCompletion.[ ObservationChanging ]
+  Call.[ PolicyRequesting ]
+  Trigger.[ DemandDescribing ]
+  Nexus.[ ReadAttemptable RedemptionAttemptable EmissionCallable MemoryCommittable ObservationCommittable PolicyAnswerable ]
+  Track.[ DemandAccountable ] ]                           ; dispatch behavior is outside the accounting capability

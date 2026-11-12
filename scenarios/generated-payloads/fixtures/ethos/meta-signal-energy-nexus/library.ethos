@@ -1,0 +1,26 @@
+Library
+[ :signal_energy_nexus:library:[ Provider Name Threshold Reminder Minutes Percent Target Failure ] ] ; shared vocabulary
+[ Path.String                                             ; reference only, never credential contents
+  Program.[ Codex Flow ]                                  ; configurable external executable capability
+  ProgramPath.{ Program Path }                            ; one configured program reference
+  CredentialReference.[ Path Unconfigured ]                ; configured credential file reference
+  CodexProgram.[ Path Unconfigured ]                       ; raw app-server executable reference
+  FlowProgram.[ Path Unconfigured ]                        ; Flow client executable reference
+  Programs.{ CodexProgram FlowProgram CredentialReference } ; translator-owned reference values
+  ProviderTarget.{ Provider Target }                       ; existing provider target
+  WindowTarget.{ Provider Name Target }                    ; existing per-window target
+  RedeemExpiring.Integer                                   ; existing configurable expiry window
+  RedeemUsedAtLeast.Integer                                ; existing configurable weekly threshold
+  ReminderChange.{ Reminder Action.[ Add Remove ] }         ; one reminder shape, two explicit changes
+  PolicySet.[ Threshold.Threshold ReminderChange RedeemExpiring RedeemUsedAtLeast ProviderTarget WindowTarget ] ; daemon-owned changes
+  ProgramChange.[ ProgramPath CredentialReference ]        ; translator-only changes, distinct from policy
+  ConfigurationChange.[ PolicySet ProgramChange ] ; owner is selected by the data
+  PolicyConfiguration.{ Vector<Threshold> Vector<Reminder> RedeemExpiring RedeemUsedAtLeast Vector<ProviderTarget> Vector<WindowTarget> } ; effective daemon policy
+  ConfigurationRevision.Integer                           ; per-owner persisted sequence, not a content fingerprint
+  NexusConfiguration.{ ConfigurationRevision PolicyConfiguration } ; daemon snapshot
+  TranslatorConfiguration.{ ConfigurationRevision Programs } ; translator snapshot
+  NexusPart.[ NexusConfiguration Failure.Failure ]                 ; availability is explicit
+  TranslatorPart.[ TranslatorConfiguration Failure.Failure ]       ; no invented complete snapshot
+  ConfigurationSnapshot.{ NexusPart TranslatorPart } ]     ; independent owner revisions
+[]                                                        ; effect traits remain in operation owners
+[]                                                        ; no runtime implementation in vocabulary

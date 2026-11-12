@@ -1,0 +1,9 @@
+Signal
+[ :crate:library:[ ConfigurationChange ConfigurationSnapshot ] ; public meta vocabulary
+  :signal_energy_nexus:library:[ Caller Failure ] ]         ; peer caller and typed failure
+[ Configure.ConfigurationChange                           ; one owner-specific setting
+  Configuration ]                                         ; effective independently versioned readback
+[ Configured.ConfigurationChange                          ; only after owner persistence succeeds
+  Configuration.ConfigurationSnapshot                     ; both or explicitly partial parts
+  Refused.Failure ]                                       ; bounded typed failure
+[ Call.{ Caller Query } ]                                 ; public meta envelope
