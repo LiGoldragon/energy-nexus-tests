@@ -4,15 +4,16 @@ Owner: Mind research Sol, 90bd85, Energy stage-one repair branch.
 
 This is a sandbox compatibility probe, not adopted production syntax. Ethos Zero
 19.2.0 at 5a5daca315ab24460ccbcd5038130c453e853e6e generated every fixture Rust
-file. None was hand-patched. Explicit repeated variant payloads are a proposed
-compatibility form awaiting Opus's ruling.
+file. None was hand-patched. Explicit repeated variant payloads are the scoped
+compatibility form authorized by Opus f1pk / Astra n5e0. They are removed
+when the generator honors defined imported types.
 
 `project CHECKOUT EMPTY_SANDBOX MODE` projects these fixtures into the ordinary
 contract's existing, unchanged Crane Nix graph at base
 7ca10ebccdc674bbd96489ceff3e2a43d32d6ec3. Run the printed Nix command on the
 builder. No local compilation or provider connection is needed.
 
-- `ordinary`: three tests, imported Failure binary and Datom roundtrips, direct
+- `ordinary`: four tests, imported Failure binary and Datom roundtrips, direct
   scalar fields and a percentage-points/day value greater than 100.
 - `negative`: the same tests against the generated original bare-import variant;
   compilation must fail with missing payload-constructor/pattern errors.

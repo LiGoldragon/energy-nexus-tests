@@ -45,3 +45,13 @@ fn semantic_scalars_are_direct_and_rate_exceeds_one_hundred() {
     let timestamp = At(123);
     assert_eq!(timestamp.0, 123);
 }
+
+#[test]
+fn generated_ordinary_payload_and_scalar_shapes_are_explicit() {
+    let contract = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/src/signal.rs"));
+    assert!(contract.contains("Failure(crate::library::Failure),"));
+    let library = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/src/library.rs"));
+    for scalar in ["At", "Expected", "Used", "PerDay", "Left"] {
+        assert!(library.contains(&format!("pub struct {scalar}(pub i64);")));
+    }
+}
