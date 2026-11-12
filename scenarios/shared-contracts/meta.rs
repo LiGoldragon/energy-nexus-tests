@@ -94,7 +94,7 @@ fn identities_cover_manifests_and_libraries_and_distinguish_roots() {
     assert_ne!(public, ordinary);
     assert_ne!(internal, ordinary);
     for source in [public, internal, ordinary] {
-        assert!(source.contains("version = \"0.6.0\""));
+        assert!(source.contains("version = \"0.7.0\""));
         assert!(source.contains("Library\n"));
         assert!(source.contains("Signal\n"));
     }
