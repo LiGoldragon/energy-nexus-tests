@@ -1,0 +1,58 @@
+[
+  {
+    "repository": "signal-energy-nexus",
+    "base_revision": "7ca10ebccdc674bbd96489ceff3e2a43d32d6ec3",
+    "original_path": "tests/fixtures/binary.txt",
+    "preserved_path": "fixtures/legacy-contracts/signal-energy-nexus/tests/fixtures/binary.txt",
+    "sha256": "f8ff8d5195359a3b2a172f65b9ba2c715d6e3f6ffd97adfd67d831ff88aa2759"
+  },
+  {
+    "repository": "signal-energy-nexus",
+    "base_revision": "7ca10ebccdc674bbd96489ceff3e2a43d32d6ec3",
+    "original_path": "tests/fixtures/contract.txt",
+    "preserved_path": "fixtures/legacy-contracts/signal-energy-nexus/tests/fixtures/contract.txt",
+    "sha256": "5fb2cf942a77b29cad471020a4bc95c3eed065fdfe1e7d9e17d483509bb876b7"
+  },
+  {
+    "repository": "signal-energy-nexus",
+    "base_revision": "7ca10ebccdc674bbd96489ceff3e2a43d32d6ec3",
+    "original_path": "tests/fixtures/datom.txt",
+    "preserved_path": "fixtures/legacy-contracts/signal-energy-nexus/tests/fixtures/datom.txt",
+    "sha256": "41f1a379ca002bfdae24bc3c646fa01ea333bd8047f690ca0b64f314c92fc88c"
+  },
+  {
+    "repository": "signal-energy-nexus",
+    "base_revision": "7ca10ebccdc674bbd96489ceff3e2a43d32d6ec3",
+    "original_path": "tests/wire_fixtures.rs",
+    "preserved_path": "fixtures/legacy-contracts/signal-energy-nexus/tests/wire_fixtures.rs",
+    "sha256": "b44bc00f2b82007bb6c0734b94ca51e625ab2360d31874cbd13e48d93492b7fc"
+  },
+  {
+    "repository": "meta-signal-energy-nexus",
+    "base_revision": "3264d6f36013ca823b60bdfbc3e10c5f6370f482",
+    "original_path": "tests/fixtures/binary.txt",
+    "preserved_path": "fixtures/legacy-contracts/meta-signal-energy-nexus/tests/fixtures/binary.txt",
+    "sha256": "42eb50a8879bf868f68e3ec3f74b513db145b25ad8bac2c1121563098fde0193"
+  },
+  {
+    "repository": "meta-signal-energy-nexus",
+    "base_revision": "3264d6f36013ca823b60bdfbc3e10c5f6370f482",
+    "original_path": "tests/fixtures/contract.txt",
+    "preserved_path": "fixtures/legacy-contracts/meta-signal-energy-nexus/tests/fixtures/contract.txt",
+    "sha256": "7cc0b93bf51742d0d9b10f46c586b4103dfb800871f9f576cfa4129fcdc9485d"
+  },
+  {
+    "repository": "meta-signal-energy-nexus",
+    "base_revision": "3264d6f36013ca823b60bdfbc3e10c5f6370f482",
+    "original_path": "tests/fixtures/datom.txt",
+    "preserved_path": "fixtures/legacy-contracts/meta-signal-energy-nexus/tests/fixtures/datom.txt",
+    "sha256": "dcee6466b82400b97d0f3b162b096721a19a887224d6e7657b1bd7ea8a8b7fa1"
+  },
+  {
+    "repository": "meta-signal-energy-nexus",
+    "base_revision": "3264d6f36013ca823b60bdfbc3e10c5f6370f482",
+    "original_path": "tests/wire_fixtures.rs",
+    "preserved_path": "fixtures/legacy-contracts/meta-signal-energy-nexus/tests/wire_fixtures.rs",
+    "sha256": "a27a2bf78676a23d0c9bec5e0efed6f852392e0e13c24016cb92e3d2413aab6a"
+  }
+]

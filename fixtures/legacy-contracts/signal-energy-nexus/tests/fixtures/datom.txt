@@ -1,0 +1,53 @@
+Provider.Claude Claude
+Provider.Codex Codex
+Percent 63
+Instant 1789000000
+Minutes 720
+Name.Session Session
+Name.Week Week
+Name.FableWeek FableWeek
+Window { Week 37 1789000000 10080 }
+ResetId reset-a1
+ResetStatus.Available Available
+ResetStatus.Redeeming Redeeming
+ResetStatus.Redeemed Redeemed
+Reset { reset-a1 Redeeming 1789100000 }
+Reading { Codex True [ { Session 37 1789000000 10080 } { Week 37 1789000000 10080 } { FableWeek 37 1789000000 10080 } ] [ { reset-a1 Available 1789100000 } { reset-a1 Redeemed 1789100000 } ] 1788999000 }
+Level.Plenty Plenty
+Level.Fair Fair
+Level.Low Low
+Level.Out Out
+Threshold { Fair 40 }
+Address.Psyche { Psyche energyNexus Sol }
+Address.Mind { Mind energyNexus Sol }
+Address.Field { Field energyNexus Sol }
+Recipient.Fable { Mind energyNexus Fable }
+Recipient.Opus { Mind energyNexus Opus }
+Recipient.Sonnet { Mind energyNexus Sonnet }
+Recipient.Haiku { Mind energyNexus Haiku }
+Recipient.Astra { Mind energyNexus Astra }
+Recipient.Sol { Mind energyNexus Sol }
+Recipient.Luna { Mind energyNexus Luna }
+Recipient.Terra { Mind energyNexus Terra }
+Reminder { Codex Low { Mind energyNexus Sol } }
+Target.Even Even
+Target.SpendBy SpendBy.1789200000
+Standing.Over Over
+Standing.Under Under
+Standing.On On
+Pace { Claude Week Even 50 61 Over 9 }
+Caller { 4242 1001 }
+Query.Read Read.Claude
+Query.Subscribe Subscribe
+Query.Redeem Redeem.Codex
+Call { { 4242 1001 } Read.Codex }
+Read_Data { { Claude True [ { Session 37 1789000000 10080 } { Week 37 1789000000 10080 } { FableWeek 37 1789000000 10080 } ] [ { reset-a1 Available 1789100000 } { reset-a1 Redeemed 1789100000 } ] 1788999000 } [ { Claude Week SpendBy.1789200000 50 61 Under 9 } { Claude Week Even 50 61 On 9 } ] }
+Changed_Data { Codex Out { Codex True [ { Session 37 1789000000 10080 } { Week 37 1789000000 10080 } { FableWeek 37 1789000000 10080 } ] [ { reset-a1 Available 1789100000 } { reset-a1 Redeemed 1789100000 } ] 1788999000 } }
+Refused.ProviderDown ProviderDown.Claude
+Refused.NoReset NoReset
+Refused.RuleRefused RuleRefused.«no reset is available»
+Response.Read Read.{ { Claude True [ { Session 37 1789000000 10080 } { Week 37 1789000000 10080 } { FableWeek 37 1789000000 10080 } ] [ { reset-a1 Available 1789100000 } { reset-a1 Redeemed 1789100000 } ] 1788999000 } [ { Claude Week Even 50 61 Over 9 } ] }
+Response.Subscribed Subscribed
+Response.Changed Changed.{ Claude Plenty { Claude True [ { Session 37 1789000000 10080 } { Week 37 1789000000 10080 } { FableWeek 37 1789000000 10080 } ] [ { reset-a1 Available 1789100000 } { reset-a1 Redeemed 1789100000 } ] 1788999000 } }
+Response.Redeemed Redeemed.{ reset-a1 Redeemed 1789100000 }
+Response.Refused Refused.NoReset
