@@ -1,6 +1,6 @@
 use energy_nexus_wire::{
-    AdmissionRefusal, AdmissionStage, Admittable, BinaryConnection, Framing, PayloadReceivable,
-    PayloadRefusal, PeerIdentifiable, CAPACITY,
+    AdmissionRefusal, AdmissionStage, Admittable, BinaryConnection, ExchangeContract, Framing,
+    PayloadRefusal, PeerIdentifiable, RequestReceivable, CAPACITY,
 };
 use signal::{
     ByteViewable, ContractDigest, Contracted, Handshake, HandshakeReceipt, HandshakeRejection,
@@ -84,7 +84,7 @@ fn wrong_greetings<C: Contracted>() -> Vec<Handshake> {
 }
 fn roundtrip<C>(value: C)
 where
-    C: Contracted + Signalizable + PartialEq + Debug + Send + 'static,
+    C: ExchangeContract + Signalizable + PartialEq + Debug + Send + 'static,
     Signal<C>: Restorable<C>,
 {
     for greeting in wrong_greetings::<C>() {
@@ -105,7 +105,7 @@ where
                 }
                 Ok(mut admitted) => {
                     count.fetch_add(1, Ordering::SeqCst);
-                    let _ = admitted.receive();
+                    let _ = admitted.receive_request();
                     panic!("wrong root reached payload restoration");
                 }
                 Err(other) => panic!("wrong mismatch refusal: {other:?}"),
@@ -142,7 +142,7 @@ where
             .admit()
             .unwrap_or_else(|e| panic!("{e:?}"));
         assert!(admitted.peer().pid() > 0);
-        admitted.receive().unwrap()
+        admitted.receive_request().unwrap()
     });
     client
         .write_frame(C::greeting().signalize().unwrap().bytes())
@@ -215,7 +215,10 @@ fn matched_handshake_does_not_bypass_payload_validation() {
         let mut admitted = BinaryConnection::<signal_energy_nexus::Call>::from(server)
             .admit()
             .unwrap_or_else(|e| panic!("{e:?}"));
-        assert!(matches!(admitted.receive(), Err(PayloadRefusal::Malformed)));
+        assert!(matches!(
+            admitted.receive_request(),
+            Err(PayloadRefusal::Malformed)
+        ));
     });
     client
         .write_frame(
@@ -236,13 +239,13 @@ fn outgoing_connection_requires_matching_receipt_and_then_sends_actual_payload()
         let mut admitted = BinaryConnection::<signal_energy_nexus::Call>::from(server)
             .admit()
             .unwrap_or_else(|e| panic!("{e:?}"));
-        admitted.receive().unwrap()
+        admitted.receive_request().unwrap()
     });
     let mut client = BinaryConnection::<signal_energy_nexus::Call>::from(client)
         .greet()
         .unwrap_or_else(|e| panic!("{e:?}"));
-    use energy_nexus_wire::PayloadSendable;
-    client.send(&ordinary()).unwrap();
+    use energy_nexus_wire::RequestSendable;
+    client.send_request(&ordinary()).unwrap();
     assert_eq!(thread.join().unwrap(), ordinary());
 }
 #[test]
@@ -276,5 +279,180 @@ fn outgoing_wrong_or_malformed_receipt_is_not_admission() {
                 | AdmissionRefusal::MalformedReceipt)
         ));
         thread.join().unwrap();
+    }
+}
+
+fn exchange<C>(request: C, response: C::Response)
+where
+    C: ExchangeContract + Signalizable + PartialEq + Debug + Send + 'static,
+    C::Response: Signalizable + PartialEq + Debug + Send + 'static,
+    Signal<C>: Restorable<C>,
+    Signal<C::Response>: Restorable<C::Response>,
+{
+    use energy_nexus_wire::{RequestSendable, ResponseReceivable, ResponseSendable};
+    let (server, client) = sockets();
+    let thread = std::thread::spawn(move || {
+        let mut server = BinaryConnection::<C>::from(server)
+            .admit()
+            .unwrap_or_else(|e| panic!("{e:?}"));
+        let received = server.receive_request().unwrap();
+        server.send_response(&response).unwrap();
+        (received, response)
+    });
+    let mut client = BinaryConnection::<C>::from(client)
+        .greet()
+        .unwrap_or_else(|e| panic!("{e:?}"));
+    assert!(client.peer().pid() > 0);
+    client.send_request(&request).unwrap();
+    let received = client.receive_response().unwrap();
+    let (server_request, server_response) = thread.join().unwrap();
+    assert_eq!(server_request, request);
+    assert_eq!(received, server_response);
+}
+#[test]
+fn ordinary_two_way_contract_exchange() {
+    exchange(
+        ordinary(),
+        signal_energy_nexus::Response::Subscribed(Vec::new()),
+    );
+}
+#[test]
+fn public_meta_two_way_contract_exchange_not_a_public_binary_listener() {
+    // Contract/role proof on an isolated pair; the actual public frontend is text.
+    exchange(
+        public(),
+        meta_signal_energy_nexus::Response::Refused(
+            signal_energy_nexus::library::Failure::ResponseMalformed,
+        ),
+    );
+}
+#[test]
+fn internal_policy_two_way_contract_exchange() {
+    exchange(
+        internal(),
+        meta_signal_energy_nexus::internal::Response::Refused(
+            signal_energy_nexus::library::Failure::ResponseMalformed,
+        ),
+    );
+}
+#[test]
+fn emission_two_way_contract_exchange() {
+    exchange(
+        emission(),
+        energy_nexus_emission::Response::Emitted(
+            energy_nexus_emission::EmissionOutcome::TurnEndsObserved(Vec::new()),
+        ),
+    );
+}
+
+#[test]
+fn compiler_enforces_root_direction_and_admission_using_the_built_libraries() {
+    // Reuse this gate's exact dependency artifacts; compile only tiny metadata probes.
+    let dependencies = std::env::current_exe()
+        .unwrap()
+        .parent()
+        .unwrap()
+        .to_owned();
+    let scratch = tempfile::tempdir().unwrap();
+    let libraries = [
+        "energy_nexus_wire",
+        "signal_energy_nexus",
+        "meta_signal_energy_nexus",
+        "energy_nexus_emission",
+    ];
+    let mut external = Vec::new();
+    for library in libraries {
+        let prefix = format!("lib{library}-");
+        let candidates: Vec<_> = std::fs::read_dir(&dependencies)
+            .unwrap()
+            .map(|entry| entry.unwrap().path())
+            .filter(|path| {
+                let name = path.file_name().unwrap().to_str().unwrap();
+                name.starts_with(&prefix) && name.ends_with(".rlib")
+            })
+            .collect();
+        assert_eq!(
+            candidates.len(),
+            1,
+            "ambiguous or absent exact gate artifact for {library}: {candidates:?}"
+        );
+        external.push(format!("{library}={}", candidates[0].display()));
+    }
+    let prelude = r#"
+#![allow(dead_code, unused_imports)]
+use energy_nexus_wire::{AdmittedServerConnection as Server, AdmittedClientConnection as Client, BinaryConnection, RequestSendable, RequestReceivable, ResponseSendable, ResponseReceivable};
+use signal_energy_nexus::{Call as Ordinary, Response as OrdinaryReply};
+use meta_signal_energy_nexus::{Call as Public, Response as PublicReply};
+use meta_signal_energy_nexus::internal::{Call as Policy, Response as PolicyReply};
+use energy_nexus_emission::{Query as Emission, Response as EmissionReply};
+"#;
+    let positive = r#"
+fn ordinary(mut s: Server<Ordinary>, mut c: Client<Ordinary>, q: Ordinary, r: OrdinaryReply) { c.send_request(&q).unwrap(); let _: Ordinary = s.receive_request().unwrap(); s.send_response(&r).unwrap(); let _: OrdinaryReply = c.receive_response().unwrap(); }
+fn public(mut s: Server<Public>, mut c: Client<Public>, q: Public, r: PublicReply) { c.send_request(&q).unwrap(); let _: Public = s.receive_request().unwrap(); s.send_response(&r).unwrap(); let _: PublicReply = c.receive_response().unwrap(); }
+fn policy(mut s: Server<Policy>, mut c: Client<Policy>, q: Policy, r: PolicyReply) { c.send_request(&q).unwrap(); let _: Policy = s.receive_request().unwrap(); s.send_response(&r).unwrap(); let _: PolicyReply = c.receive_response().unwrap(); }
+fn emission(mut s: Server<Emission>, mut c: Client<Emission>, q: Emission, r: EmissionReply) { c.send_request(&q).unwrap(); let _: Emission = s.receive_request().unwrap(); s.send_response(&r).unwrap(); let _: EmissionReply = c.receive_response().unwrap(); }
+"#;
+    let cases = [
+        ("positive", positive, None),
+        ("wrong_request_root", "fn check(mut c: Client<Ordinary>, q: Public) { c.send_request(&q).unwrap(); }", Some("E0308")),
+        ("wrong_reply_root", "fn check(mut s: Server<Ordinary>, r: PublicReply) { s.send_response(&r).unwrap(); }", Some("E0308")),
+        ("wrong_public_policy_request", "fn check(mut c: Client<Public>, q: Policy) { c.send_request(&q).unwrap(); }", Some("E0308")),
+        ("wrong_public_policy_reply", "fn check(mut s: Server<Public>, r: PolicyReply) { s.send_response(&r).unwrap(); }", Some("E0308")),
+        ("wrong_emission_request", "fn check(mut c: Client<Emission>, q: Ordinary) { c.send_request(&q).unwrap(); }", Some("E0308")),
+        ("wrong_emission_reply", "fn check(mut s: Server<Emission>, r: OrdinaryReply) { s.send_response(&r).unwrap(); }", Some("E0308")),
+        ("server_sends_request", "fn check(mut s: Server<Ordinary>, q: Ordinary) { s.send_request(&q).unwrap(); }", Some("E0599")),
+        ("client_sends_reply", "fn check(mut c: Client<Ordinary>, r: OrdinaryReply) { c.send_response(&r).unwrap(); }", Some("E0599")),
+        ("server_receives_reply", "fn check(mut s: Server<Ordinary>) { let _: OrdinaryReply = s.receive_response().unwrap(); }", Some("E0599")),
+        ("client_receives_request", "fn check(mut c: Client<Ordinary>) { let _: Ordinary = c.receive_request().unwrap(); }", Some("E0599")),
+        ("unadmitted_send", "fn check(mut c: BinaryConnection<Ordinary>, q: Ordinary) { c.send_request(&q).unwrap(); }", Some("E0599")),
+        ("unadmitted_receive", "fn check(mut s: BinaryConnection<Ordinary>) { let _: Ordinary = s.receive_request().unwrap(); }", Some("E0599")),
+        ("private_owner", "use energy_nexus_wire::AdmittedConnection;", Some("E0432")),
+        ("old_unrestricted_send", "use energy_nexus_wire::PayloadSendable;", Some("E0432")),
+        ("old_unrestricted_receive", "use energy_nexus_wire::PayloadReceivable;", Some("E0432")),
+        ("private_codec", "fn check(mut c: Client<Ordinary>, q: Public) { c.send_message(&q).unwrap(); }", Some("E0599")),
+    ];
+    for (name, body, expected) in cases {
+        let source = scratch.path().join(format!("{name}.rs"));
+        std::fs::write(&source, format!("{prelude}\n{body}")).unwrap();
+        let mut compiler =
+            std::process::Command::new(std::env::var_os("RUSTC").unwrap_or_else(|| "rustc".into()));
+        compiler
+            .args([
+                "--edition=2021",
+                "--crate-type=lib",
+                "--emit=metadata",
+                "--error-format=json",
+            ])
+            .arg("--out-dir")
+            .arg(scratch.path())
+            .arg("-L")
+            .arg(format!("dependency={}", dependencies.display()));
+        for library in &external {
+            compiler.arg("--extern").arg(library);
+        }
+        let output = compiler.arg(&source).output().unwrap();
+        let diagnostics = String::from_utf8_lossy(&output.stderr);
+        match expected {
+            None => assert!(
+                output.status.success(),
+                "positive harness failed: {diagnostics}"
+            ),
+            Some(code) => {
+                assert!(!output.status.success(), "{name} unexpectedly compiled");
+                assert!(
+                    diagnostics.contains(&format!("\"code\":\"{code}\"")),
+                    "{name} failed for the wrong reason: {diagnostics}"
+                );
+                assert!(
+                    !diagnostics.contains("\"code\":\"E0463\"")
+                        && !diagnostics.contains("\"code\":\"E0514\""),
+                    "artifact/toolchain mismatch: {diagnostics}"
+                );
+            }
+        }
+        eprintln!(
+            "exchange compiler probe {name}: {}",
+            expected.unwrap_or("accepted")
+        );
     }
 }
