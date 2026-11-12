@@ -348,11 +348,21 @@ fn emission_two_way_contract_exchange() {
 #[test]
 fn compiler_enforces_root_direction_and_admission_using_the_built_libraries() {
     // Reuse this gate's exact dependency artifacts; compile only tiny metadata probes.
-    let dependencies = std::env::current_exe()
+    let executable = std::env::current_exe().unwrap();
+    let dependencies = executable.parent().unwrap().to_owned();
+    let (unit, unit_hash) = executable
+        .file_name()
         .unwrap()
-        .parent()
+        .to_str()
         .unwrap()
-        .to_owned();
+        .rsplit_once('-')
+        .unwrap();
+    let fingerprints = dependencies.parent().unwrap().join(".fingerprint");
+    let unit_fingerprint = fingerprints
+        .join(format!("{}-{unit_hash}", env!("CARGO_PKG_NAME")))
+        .join(format!("test-integration-test-{unit}.json"));
+    let unit_metadata: serde_json::Value =
+        serde_json::from_slice(&std::fs::read(&unit_fingerprint).unwrap()).unwrap();
     let scratch = tempfile::tempdir().unwrap();
     let libraries = [
         "energy_nexus_wire",
@@ -362,15 +372,45 @@ fn compiler_enforces_root_direction_and_admission_using_the_built_libraries() {
     ];
     let mut external = Vec::new();
     for library in libraries {
-        let prefix = format!("lib{library}-");
-        let candidates: Vec<_> = std::fs::read_dir(&dependencies)
+        let identities: Vec<_> = unit_metadata["deps"]
+            .as_array()
             .unwrap()
-            .map(|entry| entry.unwrap().path())
-            .filter(|path| {
-                let name = path.file_name().unwrap().to_str().unwrap();
-                name.starts_with(&prefix) && name.ends_with(".rlib")
-            })
+            .iter()
+            .filter(|entry| entry[1].as_str() == Some(library))
             .collect();
+        assert_eq!(
+            identities.len(),
+            1,
+            "unit must name exactly one {library} dependency"
+        );
+        let expected = identities[0][3].as_u64().unwrap();
+        let package = library.replace('_', "-");
+        let mut candidates = Vec::new();
+        for entry in std::fs::read_dir(&fingerprints).unwrap() {
+            let path = entry.unwrap().path();
+            let name = path.file_name().unwrap().to_str().unwrap();
+            let Some(hash) = name.strip_prefix(&format!("{package}-")) else {
+                continue;
+            };
+            let marker = path.join(format!("lib-{library}"));
+            if !marker.is_file() {
+                continue;
+            }
+            let hex = std::fs::read_to_string(marker).unwrap();
+            let bytes: Vec<_> = (0..hex.len())
+                .step_by(2)
+                .map(|index| u8::from_str_radix(&hex[index..index + 2], 16).unwrap())
+                .collect();
+            let observed = u64::from_le_bytes(bytes.try_into().unwrap());
+            if observed == expected {
+                let artifact = dependencies.join(format!("lib{library}-{hash}.rlib"));
+                assert!(
+                    artifact.is_file(),
+                    "matched fingerprint has no rlib: {artifact:?}"
+                );
+                candidates.push(artifact);
+            }
+        }
         assert_eq!(
             candidates.len(),
             1,
