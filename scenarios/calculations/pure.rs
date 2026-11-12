@@ -136,6 +136,27 @@ fn zero_summary_proves_no_reset_without_inventing_details() {
     assert_eq!(value.select(), SelectionResult::NoReset);
 }
 #[test]
+fn partial_details_never_prove_no_reset_from_a_zero_summary() {
+    for listed in [
+        vec![],
+        vec![reset("listed", Expiry::Instant(Instant(1500)))],
+    ] {
+        for allowance in [
+            Allowance::Allowed,
+            Allowance::Disallowed,
+            Allowance::Unknown,
+        ] {
+            let mut value = selection(vec![]);
+            value.allowance = allowance;
+            value.credits = Credits::Known(Known_Data {
+                available_count: AvailableCount(0),
+                reset_details: ResetDetails::Partial(listed.clone()),
+            });
+            assert_eq!(value.select(), SelectionResult::Unproved);
+        }
+    }
+}
+#[test]
 fn duplicate_identity_or_unknown_status_or_kind_prevents_selection() {
     let known = reset("same", Expiry::Instant(Instant(1500)));
     assert_eq!(
@@ -253,6 +274,51 @@ fn duplicate_scope_and_out_of_range_use_are_unknown() {
         level(Windows::Known(vec![window(101)])).level(),
         Level::Unknown
     );
+}
+#[test]
+fn ambiguous_threshold_boundaries_are_unknown_in_every_permutation() {
+    let thresholds = [
+        Threshold {
+            level: Level::Plenty,
+            left: Left(20),
+        },
+        Threshold {
+            level: Level::Fair,
+            left: Left(20),
+        },
+        Threshold {
+            level: Level::Low,
+            left: Left(0),
+        },
+    ];
+    for order in [
+        [0, 1, 2],
+        [0, 2, 1],
+        [1, 0, 2],
+        [1, 2, 0],
+        [2, 0, 1],
+        [2, 1, 0],
+    ] {
+        for used in [0, 80, 100] {
+            let mut value = level(Windows::Known(vec![window(used)]));
+            value.threshold_vector = order
+                .iter()
+                .map(|&index| thresholds[index].clone())
+                .collect();
+            assert_eq!(value.level(), Level::Unknown);
+        }
+    }
+}
+#[test]
+fn repeated_identical_thresholds_preserve_the_level_in_every_position() {
+    let original = level(Windows::Known(vec![window(79)]));
+    for index in 0..=original.threshold_vector.len() {
+        let mut value = original.clone();
+        value
+            .threshold_vector
+            .insert(index, value.threshold_vector[1].clone());
+        assert_eq!(value.level(), Level::Fair);
+    }
 }
 
 fn pace() -> PaceCalculation {
