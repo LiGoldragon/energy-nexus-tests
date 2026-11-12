@@ -5,9 +5,14 @@ use signal_energy_nexus::{library::*, Refused_Data, Response};
 fn imported_failure_payload_survives_binary_roundtrip() {
     let value = Response::Refused(Refused_Data::Failure(Failure::ResponseMalformed));
     let bytes = value.signalize().unwrap();
-    let restored = Signal::<Response>::from(bytes.bytes().to_vec()).restore().unwrap();
+    let restored = Signal::<Response>::from(bytes.bytes().to_vec())
+        .restore()
+        .unwrap();
     assert_eq!(restored, value);
-    assert!(matches!(restored, Response::Refused(Refused_Data::Failure(Failure::ResponseMalformed))));
+    assert!(matches!(
+        restored,
+        Response::Refused(Refused_Data::Failure(Failure::ResponseMalformed))
+    ));
 }
 
 #[cfg(feature = "datom")]
@@ -24,7 +29,9 @@ fn imported_failure_payload_survives_datom_roundtrip() {
         depth: 0,
         maximum_depth: 32,
     };
-    let restored = Potential::<Response>::from(text.as_str()).actualize(&mut budget).unwrap();
+    let restored = Potential::<Response>::from(text.as_str())
+        .actualize(&mut budget)
+        .unwrap();
     assert_eq!(restored, value);
 }
 
@@ -40,7 +47,9 @@ fn semantic_scalars_are_direct_and_rate_exceeds_one_hundred() {
         per_day: PerDay(600),
     });
     let bytes = value.signalize().unwrap();
-    let restored = Signal::<Pace>::from(bytes.bytes().to_vec()).restore().unwrap();
+    let restored = Signal::<Pace>::from(bytes.bytes().to_vec())
+        .restore()
+        .unwrap();
     assert_eq!(restored, value);
     let timestamp = At(123);
     assert_eq!(timestamp.0, 123);

@@ -1,4 +1,4 @@
-use meta_signal_energy_nexus::{library::*, internal, Response};
+use meta_signal_energy_nexus::{internal, library::*, Response};
 use signal::{ByteViewable, Restorable, Signal, Signalizable};
 use signal_energy_nexus::library as domain;
 
@@ -8,7 +8,9 @@ macro_rules! roundtrip {
         fn $name() {
             let value: $kind = $value;
             let bytes = value.signalize().unwrap();
-            let restored = Signal::<$kind>::from(bytes.bytes().to_vec()).restore().unwrap();
+            let restored = Signal::<$kind>::from(bytes.bytes().to_vec())
+                .restore()
+                .unwrap();
             assert_eq!(restored, value);
             #[cfg(feature = "datom")]
             {
@@ -21,26 +23,63 @@ macro_rules! roundtrip {
                     depth: 0,
                     maximum_depth: 64,
                 };
-                let restored = Potential::<$kind>::from(text.as_str()).actualize(&mut budget).unwrap();
+                let restored = Potential::<$kind>::from(text.as_str())
+                    .actualize(&mut budget)
+                    .unwrap();
                 assert_eq!(restored, value);
             }
         }
     };
 }
-roundtrip!(policy_threshold, PolicySet,
-    PolicySet::Threshold(domain::Threshold { level: domain::Level::Fair, left: domain::Left(27) }));
-roundtrip!(nexus_part_failure, NexusPart, NexusPart::Failure(domain::Failure::ResponseMalformed));
-roundtrip!(translator_part_failure, TranslatorPart, TranslatorPart::Failure(domain::Failure::ResponseMalformed));
-roundtrip!(public_failure, Response, Response::Refused(domain::Failure::ResponseMalformed));
-roundtrip!(internal_failure, internal::Response, internal::Response::Refused(domain::Failure::ResponseMalformed));
-roundtrip!(public_configuration, meta_signal_energy_nexus::Query, meta_signal_energy_nexus::Query::Configuration);
-roundtrip!(internal_configuration, internal::Query, internal::Query::Configuration);
+roundtrip!(
+    policy_threshold,
+    PolicySet,
+    PolicySet::Threshold(domain::Threshold {
+        level: domain::Level::Fair,
+        left: domain::Left(27)
+    })
+);
+roundtrip!(
+    nexus_part_failure,
+    NexusPart,
+    NexusPart::Failure(domain::Failure::ResponseMalformed)
+);
+roundtrip!(
+    translator_part_failure,
+    TranslatorPart,
+    TranslatorPart::Failure(domain::Failure::ResponseMalformed)
+);
+roundtrip!(
+    public_failure,
+    Response,
+    Response::Refused(domain::Failure::ResponseMalformed)
+);
+roundtrip!(
+    internal_failure,
+    internal::Response,
+    internal::Response::Refused(domain::Failure::ResponseMalformed)
+);
+roundtrip!(
+    public_configuration,
+    meta_signal_energy_nexus::Query,
+    meta_signal_energy_nexus::Query::Configuration
+);
+roundtrip!(
+    internal_configuration,
+    internal::Query,
+    internal::Query::Configuration
+);
 
 #[test]
 fn generated_imported_variants_have_payload_shapes() {
     let source = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/src/library.rs"));
     assert!(source.contains("Threshold(signal_energy_nexus::library::Threshold),"));
-    assert_eq!(source.matches("Failure(signal_energy_nexus::library::Failure),").count(), 2);
+    assert_eq!(
+        source
+            .matches("Failure(signal_energy_nexus::library::Failure),")
+            .count(),
+        2
+    );
     assert!(source.contains("pub struct RedeemExpiring(pub i64);"));
     assert!(source.contains("pub struct RedeemUsedAtLeast(pub i64);"));
 }
